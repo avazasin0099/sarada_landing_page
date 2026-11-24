@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { AlertCircle, CheckCircle2, Copy, Mail, MapPin, Phone, Send } from "lucide-react";
+import { AlertCircle, CheckCircle2, Copy, Mail, MapPin, Phone, RotateCcw, Send } from "lucide-react";
 import { contactIntro, site } from "@/data/site";
+import { ContactApiError, normalisePhone, submitContact } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { Button } from "../ui/Button";
 import { Reveal } from "../ui/Reveal";
@@ -14,8 +15,7 @@ const topics = ["নোটস সংক্রান্ত প্রশ্ন", "
 function validate(v: Values): Errors {
   const e: Errors = {};
   if (v.name.trim().length < 2) e.name = "তোমার নাম লেখো।";
-  const digits = v.phone.replace(/[\s-]/g, "").replace(/^(\+91|0)/, "");
-  if (v.phone.trim() && !/^[6-9]\d{9}$/.test(digits)) e.phone = "সঠিক ১০ সংখ্যার মোবাইল নম্বর দাও।";
+  if (v.phone.trim() && !/^[6-9]\d{9}$/.test(normalisePhone(v.phone))) e.phone = "সঠিক ১০ সংখ্যার মোবাইল নম্বর দাও।";
   if (v.message.trim().length < 5) e.message = "তোমার প্রশ্ন বা অনুরোধটি লেখো।";
   return e;
 }
@@ -24,15 +24,16 @@ export function Contact() {
   const empty: Values = { name: "", phone: "", topic: topics[0], message: "" };
   const [v, setV] = useState<Values>(empty);
   const [errors, setErrors] = useState<Errors>({});
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [copied, setCopied] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
-  const doneRef = useRef<HTMLDivElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const uid = useId();
+  const sent = status === "sent";
 
   useEffect(() => {
-    if (sent) doneRef.current?.focus();
-  }, [sent]);
+    if (status === "error") errorRef.current?.focus();
+  }, [status]);
 
   const set = (k: keyof Values) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const next = { ...v, [k]: e.target.value };
@@ -40,19 +41,42 @@ export function Contact() {
     if (errors[k]) setErrors(validate(next));
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const focusField = (k: keyof Values) => formRef.current?.querySelector<HTMLElement>(`[name="${k}"]`)?.focus();
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (status === "sending") return;
     const errs = validate(v);
     setErrors(errs);
     const first = (Object.keys(errs) as (keyof Values)[])[0];
     if (first) {
-      formRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+      focusField(first);
       return;
     }
-    const subject = `${v.topic} — ${v.name}`;
-    const body = `নাম: ${v.name}\nফোন: ${v.phone || "—"}\nবিষয়: ${v.topic}\n\n${v.message}`;
-    window.location.href = `mailto:${site.emails[0]}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setSent(true);
+
+    setStatus("sending");
+    try {
+      // Payload agreed with the backend: POST /api/v1/contacts
+      await submitContact({
+        name: v.name.trim(),
+        phone: v.phone.trim() ? normalisePhone(v.phone) : "",
+        topic: v.topic,
+        message: v.message.trim(),
+        submittedAt: new Date().toISOString(),
+      });
+      setStatus("sent");
+    } catch (err) {
+      // Server-side validation errors → show under the matching field
+      const fieldErrs = err instanceof ContactApiError ? err.fieldErrors : {};
+      const keys = (Object.keys(fieldErrs) as (keyof Values)[]).filter((k) => k in v);
+      if (keys.length) {
+        setErrors(fieldErrs);
+        setStatus("idle");
+        focusField(keys[0]);
+        return;
+      }
+      setStatus("error");
+    }
   };
 
   const copyEmail = async (em: string) => {
@@ -118,7 +142,8 @@ export function Contact() {
               {sent ? (
                 <motion.div
                   key="done"
-                  ref={doneRef}
+                  // Focus when it mounts (after the form's exit animation) so screen readers announce it
+                  ref={(el: HTMLDivElement | null) => el?.focus()}
                   tabIndex={-1}
                   role="status"
                   initial={{ opacity: 0, y: 12 }}
@@ -131,19 +156,15 @@ export function Contact() {
                   </span>
                   <h3 className="font-display text-3xl font-bold">ধন্যবাদ, {v.name.split(" ")[0]}!</h3>
                   <p className="mt-3 max-w-sm text-muted">
-                    তোমার ইমেল অ্যাপে বার্তাটি তৈরি হয়েছে, শুধু ‘Send’ চাপো। অ্যাপ না খুললে সরাসরি{" "}
-                    <strong className="break-all text-ink">{site.emails[0]}</strong> ঠিকানায় লেখো বা{" "}
-                    <a href={site.phoneHref} className="font-semibold text-brand underline underline-offset-4">
-                      ফোন করো
-                    </a>
-                    ।
+                    তোমার বার্তা আমাদের কাছে পৌঁছেছে। আমরা দ্রুত তোমার সাথে যোগাযোগ করার চেষ্টা করব।
                   </p>
                   <Button
                     variant="secondary"
                     className="mt-8"
                     onClick={() => {
                       setV(empty);
-                      setSent(false);
+                      setErrors({});
+                      setStatus("idle");
                     }}
                   >
                     আরেকটি বার্তা লেখো
@@ -190,10 +211,50 @@ export function Contact() {
                   >
                     {(p) => <textarea {...p} name="message" rows={4} value={v.message} onChange={set("message")} />}
                   </Field>
+                  <AnimatePresence>
+                    {status === "error" && (
+                      <motion.div
+                        ref={errorRef}
+                        tabIndex={-1}
+                        role="alert"
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-start gap-3 rounded-xl border border-danger/30 bg-danger/8 p-4 text-[0.95rem] outline-none sm:col-span-2"
+                      >
+                        <AlertCircle className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden />
+                        <div>
+                          <p className="font-semibold">বার্তাটি পাঠানো যায়নি।</p>
+                          <p className="text-muted">
+                            ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করো, অথবা সরাসরি{" "}
+                            <a href={site.phoneHref} className="font-semibold text-ink underline underline-offset-4">
+                              ফোন করো
+                            </a>{" "}
+                            বা{" "}
+                            <a href={`mailto:${site.emails[0]}`} className="break-all font-semibold text-ink underline underline-offset-4">
+                              {site.emails[0]}
+                            </a>{" "}
+                            ঠিকানায় লেখো।
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <div className="flex flex-col-reverse items-stretch gap-4 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-muted">পাঠাও চাপলে তোমার ইমেল অ্যাপ খুলবে।</p>
-                    <Button type="submit" size="lg">
-                      <Send className="size-4" aria-hidden /> পাঠাও
+                    <p className="text-sm text-muted">তোমার নম্বর কারও সাথে শেয়ার করা হয় না।</p>
+                    <Button type="submit" size="lg" loading={status === "sending"}>
+                      {status === "sending" ? (
+                        "পাঠানো হচ্ছে…"
+                      ) : status === "error" ? (
+                        <>
+                          <RotateCcw className="size-4" aria-hidden /> আবার চেষ্টা করো
+                        </>
+                      ) : (
+                        <>
+                          <Send className="size-4" aria-hidden /> পাঠাও
+                        </>
+                      )}
                     </Button>
                   </div>
                 </motion.form>
