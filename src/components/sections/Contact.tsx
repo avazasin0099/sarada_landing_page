@@ -15,7 +15,8 @@ const topics = ["নোটস সংক্রান্ত প্রশ্ন", "
 function validate(v: Values): Errors {
   const e: Errors = {};
   if (v.name.trim().length < 2) e.name = "তোমার নাম লেখো।";
-  if (v.phone.trim() && !/^[6-9]\d{9}$/.test(normalisePhone(v.phone))) e.phone = "সঠিক ১০ সংখ্যার মোবাইল নম্বর দাও।";
+  // Phone is required by the backend (POST /contacts)
+  if (!/^[6-9]\d{9}$/.test(normalisePhone(v.phone))) e.phone = "সঠিক ১০ সংখ্যার মোবাইল নম্বর দাও।";
   if (v.message.trim().length < 5) e.message = "তোমার প্রশ্ন বা অনুরোধটি লেখো।";
   return e;
 }
@@ -59,7 +60,7 @@ export function Contact() {
       // Payload agreed with the backend: POST /api/v1/contacts
       await submitContact({
         name: v.name.trim(),
-        phone: v.phone.trim() ? normalisePhone(v.phone) : "",
+        phone: normalisePhone(v.phone),
         topic: v.topic,
         message: v.message.trim(),
         submittedAt: new Date().toISOString(),
@@ -187,7 +188,7 @@ export function Contact() {
                   <Field id={`${uid}-name`} label="তোমার নাম" required error={errors.name}>
                     {(p) => <input {...p} name="name" autoComplete="name" value={v.name} onChange={set("name")} />}
                   </Field>
-                  <Field id={`${uid}-phone`} label="মোবাইল নম্বর" hint="ঐচ্ছিক, ফোনে উত্তর চাইলে দাও" error={errors.phone}>
+                  <Field id={`${uid}-phone`} label="মোবাইল নম্বর" required hint="এই নম্বরে তোমার সাথে যোগাযোগ করা হবে" error={errors.phone}>
                     {(p) => (
                       <input {...p} name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="98765 43210" value={v.phone} onChange={set("phone")} />
                     )}
