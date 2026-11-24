@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Menu, Moon, Phone, Sun, X } from "lucide-react";
+import { Menu, Phone, X } from "lucide-react";
 import { nav, site } from "@/data/site";
-import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/cn";
 import { LinkButton } from "../ui/Button";
 import { Logo } from "../ui/Logo";
 
 export function Header() {
-  const { theme, toggle } = useTheme();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState("");
@@ -109,14 +107,6 @@ export function Header() {
             <Phone className="size-4 text-brand" aria-hidden />
             {site.phone}
           </a>
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label={theme === "dark" ? "লাইট থিম চালু করো" : "ডার্ক থিম চালু করো"}
-            className="inline-flex size-11 items-center justify-center rounded-full transition-colors hover:bg-ink/5"
-          >
-            {theme === "dark" ? <Sun className="size-5" aria-hidden /> : <Moon className="size-5" aria-hidden />}
-          </button>
           <LinkButton href="#notes" className="hidden sm:inline-flex">
             নোটস দেখো
           </LinkButton>
