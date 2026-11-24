@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Saksham design system — "paper & ink" — with Bengali fallbacks per glyph */
+@theme {
+  --font-sans: "Plus Jakarta Sans Variable", "Hind Siliguri", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces Variable", "Noto Serif Bengali Variable", ui-serif, Georgia, serif;
+
+  --color-bg: oklch(0.985 0.008 85);
+  --color-surface: oklch(1 0 0);
+  --color-surface-2: oklch(0.965 0.012 85);
+  --color-ink: oklch(0.22 0.04 255);
+  --color-muted: oklch(0.47 0.03 255);
+  --color-line: oklch(0.9 0.012 85);
+  --color-brand: oklch(0.42 0.13 255);
+  --color-brand-strong: oklch(0.36 0.12 255);
+  --color-brand-soft: oklch(0.94 0.03 255);
+  --color-on-brand: oklch(0.99 0.005 85);
+  --color-accent: oklch(0.8 0.15 75);
+  --color-accent-soft: oklch(0.94 0.06 85);
+  --color-on-accent: oklch(0.22 0.04 255);
+  --color-success: oklch(0.5 0.12 155);
+  --color-danger: oklch(0.52 0.19 27);
+
+  --radius-card: 1.25rem;
+  --shadow-card: 0 1px 2px oklch(0.22 0.04 255 / 0.06), 0 8px 24px -12px oklch(0.22 0.04 255 / 0.18);
+  --shadow-lift: 0 2px 4px oklch(0.22 0.04 255 / 0.06), 0 24px 48px -20px oklch(0.22 0.04 255 / 0.3);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-mark: mark 0.9s var(--ease-out-expo) 0.45s both;
+  --animate-pulse-dot: pulse-dot 1.8s ease-in-out infinite;
+
+  @keyframes mark {
+    from { transform: scaleX(0) rotate(-1.5deg); }
+    to { transform: scaleX(1) rotate(-1.5deg); }
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+}
+
+.dark {
+  --color-bg: oklch(0.16 0.015 260);
+  --color-surface: oklch(0.21 0.03 255);
+  --color-surface-2: oklch(0.24 0.032 255);
+  --color-ink: oklch(0.96 0.01 85);
+  --color-muted: oklch(0.75 0.02 255);
+  --color-line: oklch(0.32 0.03 255);
+  --color-brand: oklch(0.76 0.11 250);
+  --color-brand-strong: oklch(0.82 0.09 250);
+  --color-brand-soft: oklch(0.28 0.05 255);
+  --color-on-brand: oklch(0.18 0.03 255);
+  --color-accent: oklch(0.8 0.14 75);
+  --color-accent-soft: oklch(0.32 0.05 75);
+  --color-on-accent: oklch(0.18 0.03 255);
+  --color-success: oklch(0.75 0.13 155);
+  --color-danger: oklch(0.72 0.15 27);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3), 0 8px 24px -12px oklch(0 0 0 / 0.5);
+  --shadow-lift: 0 2px 4px oklch(0 0 0 / 0.3), 0 24px 48px -20px oklch(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+/* Deep-ink band: identical in light & dark so marigold keeps contrast */
+.band-ink {
+  --color-bg: oklch(0.27 0.07 258);
+  --color-ink: oklch(0.97 0.01 85);
+  --color-muted: oklch(0.84 0.02 255);
+  --color-brand: oklch(0.82 0.14 78);
+  --color-line: oklch(0.38 0.06 258);
+}
+
+@layer base {
+  html {
+    @apply bg-bg text-ink antialiased;
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+  /* Bengali matras & conjuncts need taller lines */
+  body { @apply font-sans text-base leading-[1.75]; }
+  h1, h2, h3 { line-height: 1.3; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-brand rounded-[4px]; }
+  ::selection { @apply bg-accent text-on-accent; }
+}
+
+@utility ruled {
+  background-image:
+    repeating-linear-gradient(to bottom, transparent 0 39px, color-mix(in oklch, var(--color-line) 80%, transparent) 39px 40px);
+  mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+}
