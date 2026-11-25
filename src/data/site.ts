@@ -34,7 +34,7 @@ export const ebookApp = {
   androidPackage: "com.avazas.ebook",
   features: ["কেনা নোটস সাথে সাথে অ্যাপে", "যেকোনো সময়, যেকোনো জায়গায় পড়ো", "নিরাপদ অনলাইন পেমেন্ট"],
   deepLink: import.meta.env.VITE_APP_DEEP_LINK || "avazasebook://books/{id}", // app scheme + expo-router route books/[slug]
-  downloadUrl: import.meta.env.VITE_APP_DOWNLOAD_URL || "/downloads/avazas-books.apk", // .apk file or store page
+  downloadUrl: import.meta.env.VITE_APP_DOWNLOAD_URL || "https://github.com/avazasin0099/sarada_landing_page/releases/download/app-v1.0.0/avazas-books.apk", // GitHub release asset (APK is too big to deploy with the site)
 };
 
 export const nav = [

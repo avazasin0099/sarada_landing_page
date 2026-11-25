@@ -295,20 +295,62 @@ function AppCard({
           {opening ? "অ্যাপ খোলা হচ্ছে…" : `${ebookApp.name} অ্যাপে খোলো`}
         </Button>
       ) : url ? (
-        <LinkButton
-          href={url}
-          size="lg"
-          className="mt-4 w-full"
-          {...(isApk ? { download: "" } : { target: "_blank", rel: "noopener noreferrer" })}
-        >
-          {isApk ? <Download className="size-4" aria-hidden /> : <ExternalLink className="size-4" aria-hidden />}
-          অ্যাপ ইনস্টল করো{isApk ? " (APK)" : ""}
-        </LinkButton>
+        <DownloadButton url={url} isApk={isApk} />
       ) : (
         <Button size="lg" className="mt-4 w-full" disabled>
           <Download className="size-4" aria-hidden /> শীঘ্রই আসছে
         </Button>
       )}
     </div>
+  );
+}
+
+/**
+ * The install-file button. For a same-origin file it first checks the server really has it:
+ * a missing file comes back as the site's index.html (SPA fallback), which phones would
+ * otherwise save as "avazas-books.apk.html".
+ */
+function DownloadButton({ url, isApk }: { url: string; isApk: boolean }) {
+  const [state, setState] = useState<"idle" | "checking" | "missing">("idle");
+  const sameOrigin = new URL(url, location.href).origin === location.origin;
+
+  const onClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!sameOrigin) return; // external host / store page: let the link work normally
+    e.preventDefault();
+    setState("checking");
+    try {
+      const res = await fetch(url, { method: "HEAD", cache: "no-store" });
+      const type = res.headers.get("content-type") ?? "";
+      if (!res.ok || type.includes("text/html")) throw new Error("not the install file");
+      setState("idle");
+      window.location.href = url; // served as an .apk, so the browser downloads it
+    } catch {
+      setState("missing");
+    }
+  };
+
+  return (
+    <>
+      <LinkButton
+        href={url}
+        size="lg"
+        className="mt-4 w-full"
+        onClick={onClick}
+        aria-busy={state === "checking" || undefined}
+        {...(isApk ? { download: "" } : { target: "_blank", rel: "noopener noreferrer" })}
+      >
+        {isApk ? <Download className="size-4" aria-hidden /> : <ExternalLink className="size-4" aria-hidden />}
+        {state === "checking" ? "ডাউনলোড শুরু হচ্ছে…" : `অ্যাপ ইনস্টল করো${isApk ? " (APK)" : ""}`}
+      </LinkButton>
+      {state === "missing" && (
+        <p role="alert" className="mt-3 rounded-lg bg-accent-soft p-3 text-sm">
+          দুঃখিত, অ্যাপের ফাইলটি এই মুহূর্তে পাওয়া যাচ্ছে না। কিনতে চাইলে{" "}
+          <a href={site.phoneHref} className="font-semibold underline">
+            {site.phone}
+          </a>{" "}
+          নম্বরে যোগাযোগ করো।
+        </p>
+      )}
+    </>
   );
 }
