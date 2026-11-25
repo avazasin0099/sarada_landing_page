@@ -1,0 +1,8 @@
+{
+  "name": "সারদা পাঠশালা",
+  "short_name": "সারদা পাঠশালা",
+  "start_url": "/",
+  "display": "browser",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }],
+  "related_applications": [{ "platform": "play", "id": "com.avazas.ebook" }]
+}

@@ -5,3 +5,6 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Large app installer: host on a CDN/storage in production
+public/downloads/*.apk

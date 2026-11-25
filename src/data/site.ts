@@ -25,6 +25,18 @@ export const site = {
   facebookGroup: { name: "সারদা পাঠশালা", url: "" },
 };
 
+/** Avazas ebook app: the "কিনুন" button opens a modal that launches the app, or offers the install file. */
+export const ebookApp = {
+  name: "Avazas Books",
+  tagline: "নোটস কেনো ও পড়ো এক অ্যাপে",
+  icon: import.meta.env.VITE_APP_ICON_URL || "/images/avazas-icon.png",
+  platform: "Android",
+  androidPackage: "com.avazas.ebook",
+  features: ["কেনা নোটস সাথে সাথে অ্যাপে", "যেকোনো সময়, যেকোনো জায়গায় পড়ো", "নিরাপদ অনলাইন পেমেন্ট"],
+  deepLink: import.meta.env.VITE_APP_DEEP_LINK || "avazasebook://books/{id}", // app scheme + expo-router route books/[slug]
+  downloadUrl: import.meta.env.VITE_APP_DOWNLOAD_URL || "/downloads/avazas-books.apk", // .apk file or store page
+};
+
 export const nav = [
   { id: "notes", label: "নোটস" },
   { id: "teacher", label: "আমাদের পরিচয়" },
