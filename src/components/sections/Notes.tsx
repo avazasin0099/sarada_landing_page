@@ -4,7 +4,8 @@ import { ArrowUpRight, Eye, FilePlus2, FileText, ShoppingBag } from "lucide-reac
 import { freeSample, notes, type Note } from "@/data/site";
 import { bnNum, taka } from "@/lib/format";
 import { cn } from "@/lib/cn";
-import { LinkButton } from "../ui/Button";
+import { Button, LinkButton } from "../ui/Button";
+import { AppBuyModal } from "./AppBuyModal";
 import { Reveal } from "../ui/Reveal";
 import { Section, SectionHeader } from "../ui/Section";
 
@@ -16,6 +17,7 @@ const filters = [
 
 export function Notes() {
   const [filter, setFilter] = useState("all");
+  const [buying, setBuying] = useState<Note | null>(null);
   const list = useMemo(() => notes.filter((n) => filter === "all" || n.universityShort === filter), [filter]);
 
   return (
@@ -67,11 +69,13 @@ export function Notes() {
               exit={{ opacity: 0, scale: 0.97 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
-              <NoteCard note={n} />
+              <NoteCard note={n} onBuy={setBuying} />
             </motion.li>
           ))}
         </AnimatePresence>
       </motion.ul>
+
+      <AppBuyModal note={buying} onClose={() => setBuying(null)} />
 
       <FreeSample />
 
@@ -93,11 +97,17 @@ export function Notes() {
   );
 }
 
-function NoteCard({ note: n }: { note: Note }) {
+function NoteCard({ note: n, onBuy }: { note: Note; onBuy: (n: Note) => void }) {
   const off = Math.round((1 - n.price / n.originalPrice) * 100);
   return (
     <article className="group grid h-full grid-cols-1 overflow-hidden rounded-card border border-line bg-surface shadow-card transition-[transform,box-shadow] duration-300 ease-out-expo hover:-translate-y-1 hover:shadow-lift motion-reduce:hover:translate-y-0 sm:grid-cols-[11rem_1fr]">
-      <a href={n.buyUrl} className="relative flex justify-center bg-surface-2 p-5 sm:items-start sm:p-4" tabIndex={-1} aria-hidden>
+      <button
+        type="button"
+        onClick={() => onBuy(n)}
+        className="relative flex cursor-pointer justify-center bg-surface-2 p-5 sm:items-start sm:p-4"
+        tabIndex={-1}
+        aria-hidden
+      >
         <img
           src={n.cover}
           alt=""
@@ -106,7 +116,7 @@ function NoteCard({ note: n }: { note: Note }) {
           loading="lazy"
           className="block aspect-[2/3] w-40 rounded-lg object-cover shadow-card transition-transform duration-300 ease-out-expo group-hover:-rotate-2 motion-reduce:group-hover:rotate-0 sm:w-full"
         />
-      </a>
+      </button>
       <div className="flex flex-col p-6">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-brand-soft px-2.5 py-1 text-sm font-bold text-brand">{n.universityShort}</span>
@@ -144,10 +154,14 @@ function NoteCard({ note: n }: { note: Note }) {
           >
             <Eye className="size-4" aria-hidden /> ফ্রি নমুনা
           </LinkButton>
-          <LinkButton href={n.buyUrl} aria-label={`${n.course} ${n.part} কিনুন, ${taka(n.price)}`}>
+          <Button
+            onClick={() => onBuy(n)}
+            aria-haspopup="dialog"
+            aria-label={`${n.course} ${n.part} কিনুন, ${taka(n.price)}`}
+          >
             <ShoppingBag className="size-4" aria-hidden /> কিনুন
             <ArrowUpRight className="size-4 opacity-80" aria-hidden />
-          </LinkButton>
+          </Button>
         </div>
       </div>
     </article>
